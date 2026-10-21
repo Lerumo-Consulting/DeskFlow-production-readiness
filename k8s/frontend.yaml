@@ -16,6 +16,14 @@ spec:
           image: ghcr.io/lerumo-consulting/deskflow-frontend:latest
           imagePullPolicy: Always
           ports: [{containerPort: 80}]
+          readinessProbe:
+            httpGet: {path: /, port: 80}
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: 80}
+            initialDelaySeconds: 10
+            periodSeconds: 20
           resources:
             requests: {cpu: 50m, memory: 32Mi}
             limits: {memory: 128Mi}
