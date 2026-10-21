@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels: {app: deskflow, component: backend}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: deskflow, component: backend}
+  template:
+    metadata:
+      labels: {app: deskflow, component: backend}
+    spec:
+      initContainers:
+        - name: migrate
+          image: ghcr.io/lerumo-consulting/deskflow-backend:latest
+          command: ["sh", "-c", "until nc -z db 5432; do echo waiting for db; sleep 2; done; npx prisma migrate deploy"]
+          envFrom:
+            - secretRef: {name: deskflow-secrets}
+      containers:
+        - name: backend
+          image: ghcr.io/lerumo-consulting/deskflow-backend:latest
+          imagePullPolicy: Always
+          ports: [{containerPort: 5000}]
+          env:
+            - name: PORT
+              value: "5000"
+          envFrom:
+            - secretRef: {name: deskflow-secrets}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels: {app: deskflow, component: backend}
+spec:
+  selector: {app: deskflow, component: backend}
+  ports: [{port: 5000, targetPort: 5000}]
